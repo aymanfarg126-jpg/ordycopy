@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OrdyCopy | The Best Game Copier</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           الثيم الأساسي المستقر
+        ========================================= */
+        :root {
+            --bg-deep: #030712; 
+            --primary: #00f2fe; 
+            --secondary: #4facfe;
+            --accent: #8b5cf6;
+            --glass: rgba(17, 24, 39, 0.7);
+            --glass-border: rgba(0, 242, 254, 0.15);
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            background-color: var(--bg-deep);
+            background-image: radial-gradient(circle at 50% 10%, #1e1b4b 0%, var(--bg-deep) 60%);
+            font-family: 'Cairo', sans-serif;
+            color: var(--text-main);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* =========================================
+           الشريط العلوي وزرار اللغات
+        ========================================= */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0;
+            height: 75px;
+            background: rgba(3, 7, 18, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 5%;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem; color: #fff; letter-spacing: 2px; direction: ltr;
+        }
+        .logo span { color: var(--primary); text-shadow: 0 0 15px var(--primary); }
+
+        .lang-selector { position: relative; display: inline-block; }
+        .lang-btn {
+            background: rgba(0, 242, 254, 0.05); color: #fff; border: 1px solid rgba(0, 242, 254, 0.4);
+            padding: 8px 15px; border-radius: 8px; cursor: pointer; font-family: 'Cairo', sans-serif;
+            font-weight: 600; font-size: 1rem; transition: 0.3s;
+        }
+        .lang-btn:hover { background: rgba(0, 242, 254, 0.15); border-color: var(--primary); }
+        
+        .lang-menu {
+            position: absolute; top: 100%; right: 0; margin-top: 10px;
+            background: rgba(3, 7, 18, 0.95); border: 1px solid var(--glass-border);
+            border-radius: 8px; min-width: 120px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; opacity: 0; visibility: hidden; transition: 0.2s;
+        }
+        .lang-selector:hover .lang-menu { opacity: 1; visibility: visible; }
+        .lang-menu button {
+            background: transparent; color: #fff; border: none; padding: 12px; text-align: center;
+            font-family: inherit; font-size: 1rem; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .lang-menu button:hover { background: rgba(0, 242, 254, 0.15); color: var(--primary); }
+
+        /* =========================================
+           المحتوى
+        ========================================= */
+        .container {
+            position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center;
+            padding: 130px 20px 100px 20px; max-width: 1100px; margin: 0 auto; gap: 80px;
+        }
+
+        .hero { text-align: center; }
+        h1 { font-size: 3.5rem; font-weight: 800; margin: 0 0 20px 0; line-height: 1.4; }
+        .typewriter-text { background: linear-gradient(to right, #00f2fe, #4facfe, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .cursor { color: #00f2fe; animation: blink 0.8s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .subtitle { font-size: 1.2rem; color: var(--text-sub); line-height: 1.8; max-width: 800px; margin: 0 auto; }
+
+        .live-stats { display: flex; justify-content: center; gap: 40px; margin-top: 40px; flex-wrap: wrap; }
+        .stat-box { background: var(--glass); border: 1px solid var(--glass-border); padding: 20px 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .stat-num { font-size: 2.5rem; font-family: 'Orbitron', sans-serif; color: var(--primary); font-weight: bold; }
+        .stat-title { font-size: 1rem; color: var(--text-sub); }
+
+        .video-holo {
+            width: 100%; max-width: 900px; height: 480px; background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--accent); border-radius: 30px; box-shadow: 0 0 40px rgba(139, 92, 246, 0.2);
+            display: flex; justify-content: center; align-items: center;
+        }
+        .play-btn {
+            width: 80px; height: 80px; background: rgba(139, 92, 246, 0.2); border: 2px solid var(--accent); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.3s;
+        }
+        .play-btn:hover { background: var(--accent); transform: scale(1.1); }
+        .play-btn svg { width: 35px; height: 35px; fill: #fff; margin-left: 4px;}
+
+        /* =========================================
+           الخانات (تم تحويل خانة الكود لـ textarea)
+        ========================================= */
+        .control-panel { width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 25px; }
+        .input-group label { display: block; font-size: 1.1rem; color: var(--primary); margin-bottom: 10px; font-weight: 600; }
+        
+        input, textarea {
+            width: 100%; padding: 22px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px; color: #fff; font-size: 1.2rem; outline: none; transition: 0.3s; box-sizing: border-box; font-family: inherit;
+        }
+        textarea { resize: vertical; min-height: 130px; line-height: 1.6; }
+        input::placeholder, textarea::placeholder { color: #475569; font-size: 1rem; }
+        input:focus, textarea:focus { border-color: var(--primary); background: rgba(0, 242, 254, 0.05); }
+
+        .btn-glow {
+            width: 100%; padding: 22px; margin-top: 15px; background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #000; border: none; border-radius: 15px; font-size: 1.4rem; font-weight: 800; cursor: pointer; transition: 0.3s;
+            display: flex; justify-content: center; align-items: center; gap: 10px; font-family: inherit;
+        }
+        .btn-glow:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0, 242, 254, 0.4); }
+        .spinner { display: none; width: 22px; height: 22px; border: 3px solid rgba(0,0,0,0.3); border-top: 3px solid #000; border-radius: 50%; animation: spin 1s linear infinite; }
+
+        /* =========================================
+           الأسئلة الشائعة
+        ========================================= */
+        .faq-section { width: 100%; max-width: 800px; margin-top: 30px; }
+        .faq-header { text-align: center; font-size: 2.5rem; margin-bottom: 40px; color: #fff; }
+        .faq-item { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 15px; margin-bottom: 15px; overflow: hidden; transition: 0.3s; }
+        .faq-question { padding: 20px; font-size: 1.2rem; font-weight: 600; color: #fff; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .faq-answer { padding: 0 20px; max-height: 0; overflow: hidden; color: var(--text-sub); line-height: 1.6; transition: 0.3s; }
+        .faq-item.active { border-color: var(--primary); box-shadow: 0 5px 20px rgba(0,242,254,0.1); }
+        .faq-item.active .faq-answer { padding: 0 20px 20px 20px; max-height: 300px; }
+        .faq-icon { font-size: 1.5rem; color: var(--primary); transition: 0.3s; }
+        .faq-item.active .faq-icon { transform: rotate(45deg); }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; } .live-stats { gap: 15px; } .stat-box { padding: 15px 25px; }
+            .video-holo { height: 300px; } .container { padding-top: 120px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="ordyGrid"></canvas>
+
+    <nav class="navbar">
+        <div class="logo">Ordy<span>Copy</span></div>
+        <div class="lang-selector">
+            <button class="lang-btn" id="langBtnText">🌐 Language ▾</button>
+            <div class="lang-menu">
+                <button onclick="changeLang('en')">English</button>
+                <button onclick="changeLang('ar')">العربية</button>
+                <button onclick="changeLang('es')">Español</button>
+                <button onclick="changeLang('zh')">中文</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="hero">
+            <h1><span id="txt-hero">The best platform for </span><br><span class="typewriter-text" id="typewriter"></span><span class="cursor">|</span></h1>
+            <p class="subtitle" id="txt-sub">Say goodbye to complexity. OrdyCopy provides a clean, safe, and fast environment to process your links and download your files.</p>
+            
+            <div class="live-stats">
+                <div class="stat-box">
+                    <div class="stat-num" id="stat1">0</div>
+                    <div class="stat-title" id="txt-stat1">Files Processed</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num" id="stat2">0</div>
+                    <div class="stat-title" id="txt-stat2">Safety Rate</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num" id="stat3">0</div>
+                    <div class="stat-title" id="txt-stat3">Response Time (ms)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="video-holo">
+            <div class="play-btn">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <div class="input-group">
+                <label id="txt-label1">Target Game URL</label>
+                <input type="url" id="gameUrl" placeholder="https://roblox.com/games/...">
+            </div>
+
+            <div class="input-group">
+                <label id="txt-label2">License Key</label>
+                <textarea id="promoCode" placeholder="Enter your License Key..."></textarea>
+            </div>
+
+            <button class="btn-glow" id="downloadBtn" onclick="executeOrdy()">
+                <span id="btnText">Start Extraction</span>
+                <div class="spinner" id="btnSpinner"></div>
+            </button>
+        </div>
+
+        <div class="faq-section">
+            <h2 class="faq-header" id="txt-faqTitle">Frequently Asked Questions 💡</h2>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span id="txt-q1">Is OrdyCopy safe for my accounts?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer" id="txt-a1">
+                    Absolutely! The platform operates in a fully cloud-sandboxed environment. No personal data or passwords are required.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span id="txt-q2">How long does it take to extract a game file?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer" id="txt-a2">
+                    Thanks to our powerful servers, the process takes between 2 to 5 seconds maximum once your license key is verified.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span id="txt-q3">Do I need to download third-party software?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer" id="txt-a3">
+                    Not at all. OrdyCopy is entirely web-based. All you need is a browser, the game link, and your key.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /* ==========================================
+           نظام الترجمة الداخلي (سريع وبدون نت)
+        ========================================== */
+        const translations = {
+            en: {
+                langBtn: "🌐 Language ▾", hero: "The best platform for ",
+                sub: "Say goodbye to complexity. OrdyCopy provides a clean, safe, and fast environment to process your links and download your files.",
+                stat1: "Files Processed", stat2: "Safety Rate", stat3: "Response Time (ms)",
+                label1: "Target Game URL", label2: "License Key",
+                place1: "https://roblox.com/games/...", place2: "Enter your License Key...",
+                btn: "Start Extraction", faqTitle: "Frequently Asked Questions 💡",
+                q1: "Is OrdyCopy safe for my accounts?", a1: "Absolutely! The platform operates in a fully cloud-sandboxed environment. No personal data or passwords are required.",
+                q2: "How long does it take to extract a game file?", a2: "Thanks to our powerful servers, the process takes between 2 to 5 seconds maximum once your license key is verified.",
+                q3: "Do I need to download third-party software?", a3: "Not at all. OrdyCopy is entirely web-based. All you need is a browser, the game link, and your key.",
+                err: "Please fill all fields!", process: "Connecting...", success: "Success ✔"
+            },
+            ar: {
+                langBtn: "🌐 اللغة ▾", hero: "أفضل منصة لـ ",
+                sub: "وداعاً للتعقيد. يوفر لك OrdyCopy بيئة نظيفة، آمنة، وسريعة لمعالجة روابطك وتحميل ملفاتك.",
+                stat1: "ملف تم معالجته", stat2: "نسبة الأمان", stat3: "زمن الاستجابة (ms)",
+                label1: "رابط اللعبة", label2: "كود التفعيل",
+                place1: "https://roblox.com/games/...", place2: "أدخل الكود الخاص بك...",
+                btn: "بدء المعالجة", faqTitle: "الأسئلة الشائعة 💡",
+                q1: "هل النظام آمن على حساباتي؟", a1: "بالتأكيد! النظام يعمل في بيئة معزولة سحابياً ولا يتطلب أي بيانات شخصية.",
+                q2: "كم يستغرق استخراج الملف؟", a2: "بفضل خوادمنا القوية، العملية تستغرق من ثانيتين إلى 5 ثوانٍ فقط.",
+                q3: "هل أحتاج لتحميل برامج إضافية؟", a3: "لا نهائياً. كل شيء يتم عبر المتصفح الخاص بك مباشرة.",
+                err: "الرجاء إكمال البيانات!", process: "جاري الاتصال...", success: "تم بنجاح ✔"
+            },
+            es: {
+                langBtn: "🌐 Idioma ▾", hero: "La mejor plataforma para ",
+                sub: "Di adiós a la complejidad. OrdyCopy proporciona un entorno limpio, seguro y rápido para procesar tus enlaces y descargar tus archivos.",
+                stat1: "Archivos Procesados", stat2: "Tasa de Seguridad", stat3: "Tiempo de Respuesta",
+                label1: "URL del Juego", label2: "Clave de Licencia",
+                place1: "https://roblox.com/games/...", place2: "Ingresa tu Clave de Licencia...",
+                btn: "Iniciar Extracción", faqTitle: "Preguntas Frecuentes 💡",
+                q1: "¿Es seguro para mis cuentas?", a1: "¡Absolutamente! Operamos en un entorno de nube aislado. No se requieren datos personales.",
+                q2: "¿Cuánto tarda en extraer un archivo?", a2: "El proceso tarda entre 2 y 5 segundos máximo una vez verificada su clave.",
+                q3: "¿Necesito descargar software de terceros?", a3: "En absoluto. OrdyCopy está basado en la web. Solo necesita un navegador.",
+                err: "¡Complete todos los campos!", process: "Conectando...", success: "Éxito ✔"
+            },
+            zh: {
+                langBtn: "🌐 语言 ▾", hero: "最佳平台用于 ",
+                sub: "告别复杂。OrdyCopy提供一个干净、安全、快速的环境来处理您的链接并下载文件。",
+                stat1: "处理的文件", stat2: "安全率", stat3: "响应时间",
+                label1: "目标游戏链接", label2: "许可证密钥",
+                place1: "https://roblox.com/games/...", place2: "输入您的许可证密钥...",
+                btn: "开始提取", faqTitle: "常见问题 💡",
+                q1: "这对我的账户安全吗？", a1: "绝对安全！平台在完全云沙盒环境中运行。不需要个人数据。",
+                q2: "提取文件需要多长时间？", a2: "一旦验证了您的密钥，该过程最多需要2到5秒。",
+                q3: "我需要下载第三方软件吗？", a3: "完全不需要。OrdyCopy完全基于网络。您只需要一个浏览器。",
+                err: "请填写所有字段！", process: "正在连接...", success: "成功 ✔"
+            }
+        };
+
+        const typeTexts = {
+            en: ["Fast Game Copying ⚡", "Encrypted Extraction 🛡️", "Lightning Fast Downloads 🚀"],
+            ar: ["النسخ السريع للألعاب ⚡", "استخراج مشفر 🛡️", "تحميل صاروخي 🚀"],
+            es: ["Copia Rápida de Juegos ⚡", "Extracción Cifrada 🛡️", "Descargas Rápidas 🚀"],
+            zh: ["快速游戏复制 ⚡", "加密提取 🛡️", "极速下载 🚀"]
+        };
+
+        let currentLang = 'en'; // اللغة الافتراضية
+
+        function changeLang(lang) {
+            currentLang = lang;
+            document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+            
+            const t = translations[lang];
+            document.getElementById('langBtnText').innerText = t.langBtn;
+            document.getElementById('txt-hero').innerText = t.hero;
+            document.getElementById('txt-sub').innerText = t.sub;
+            document.getElementById('txt-stat1').innerText = t.stat1;
+            document.getElementById('txt-stat2').innerText = t.stat2;
+            document.getElementById('txt-stat3').innerText = t.stat3;
+            document.getElementById('txt-label1').innerText = t.label1;
+            document.getElementById('txt-label2').innerText = t.label2;
+            document.getElementById('gameUrl').placeholder = t.place1;
+            document.getElementById('promoCode').placeholder = t.place2;
+            document.getElementById('btnText').innerText = t.btn;
+            document.getElementById('txt-faqTitle').innerText = t.faqTitle;
+            document.getElementById('txt-q1').innerText = t.q1; document.getElementById('txt-a1').innerText = t.a1;
+            document.getElementById('txt-q2').innerText = t.q2; document.getElementById('txt-a2').innerText = t.a2;
+            document.getElementById('txt-q3').innerText = t.q3; document.getElementById('txt-a3').innerText = t.a3;
+
+            // ريست للآلة الكاتبة
+            txtIdx = 0; charIdx = 0; deleting = false;
+            document.getElementById("typewriter").textContent = "";
+        }
+
+        /* ==========================================
+           تأثير الكتابة
+        ========================================== */
+        let txtIdx = 0, charIdx = 0, deleting = false;
+        const tw = document.getElementById("typewriter");
+
+        function typeWriter() {
+            const currentArray = typeTexts[currentLang];
+            const currentStr = currentArray[txtIdx];
+            
+            if (deleting) {
+                tw.textContent = currentStr.substring(0, charIdx - 1);
+                charIdx--;
+            } else {
+                tw.textContent = currentStr.substring(0, charIdx + 1);
+                charIdx++;
+            }
+            
+            let speed = deleting ? 40 : 80;
+            if (!deleting && charIdx === currentStr.length) { speed = 2000; deleting = true; } 
+            else if (deleting && charIdx === 0) { deleting = false; txtIdx = (txtIdx + 1) % currentArray.length; speed = 500; }
+            setTimeout(typeWriter, speed);
+        }
+        typeWriter();
+
+        /* ==========================================
+           العدادات والأسئلة الشائعة
+        ========================================== */
+        function animateValue(id, start, end, duration, suffix = "") {
+            let obj = document.getElementById(id);
+            let startTime = null;
+            function step(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let progress = Math.min((timestamp - startTime) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start) + suffix;
+                if (progress < 1) { window.requestAnimationFrame(step); }
+            }
+            window.requestAnimationFrame(step);
+        }
+        
+        animateValue("stat1", 0, 14592, 2000, "+");
+        animateValue("stat2", 0, 100, 2000, "%");
+        animateValue("stat3", 0, 12, 2000);
+
+        function toggleFaq(element) {
+            let parent = element.parentElement;
+            if (parent.classList.contains("active")) { parent.classList.remove("active"); } 
+            else {
+                document.querySelectorAll(".faq-item").forEach(item => item.classList.remove("active"));
+                parent.classList.add("active");
+            }
+        }
+// ==========================================
+// إرسال البيانات للسيرفر فقط
+// ==========================================
+async function sendPowerShell(data) {
+
+    const response = await fetch("https://ordycopy-production.up.railway.app/verify", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+        throw new Error("Server error");
+    }
+
+    return await response.json();
+}
+
+// ==========================================
+// زر التنفيذ
+// ==========================================
+async function executeOrdy() {
+
+    const urlInput = document.getElementById('gameUrl').value.trim();
+    const input = document.getElementById('promoCode').value.trim();
+
+    const btn = document.getElementById('downloadBtn');
+    const txt = document.getElementById('btnText');
+    const spin = document.getElementById('btnSpinner');
+    const t = translations[currentLang];
+
+    if (!urlInput || !input) {
+        txt.innerText = t.err;
+        btn.style.background = "#ef4444";
+        setTimeout(() => {
+            txt.innerText = t.btn;
+            btn.style.background = "linear-gradient(135deg, var(--primary), var(--secondary))";
+        }, 2000);
+        return;
+    }
+
+    btn.disabled = true;
+    txt.innerText = "Verifying...";
+    spin.style.display = "block";
+
+    try {
+
+        // ✅ نبعت الـ Game ID فقط
+        const gameIdMatch = urlInput.match(/\/games\/(\d+)/);
+        if (!gameIdMatch) {
+            throw new Error("Invalid URL");
+        }
+
+        const gameId = gameIdMatch[1];
+
+        const result = await fetch("https://ordycopy-production.up.railway.app/verify", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ projectName: gameId })
+        });
+
+        const data = await result.json();
+
+        spin.style.display = "none";
+
+        if (!data.download) {
+            txt.innerText = "❌ Invalid!";
+            btn.style.background = "#ef4444";
+            btn.disabled = false;
+            return;
+        }
+
+        // ✅ نجاح
+        txt.innerText = "✅ Valid!";
+        btn.style.background = "#10b981";
+
+        setTimeout(() => {
+            window.location.href = data.download; // 🔥 نفتح جوجل درايف مباشرة
+        }, 800);
+
+    } catch (err) {
+
+        spin.style.display = "none";
+        txt.innerText = "Error";
+        btn.style.background = "#ef4444";
+        btn.disabled = false;
+    }
+}
+
+// ==========================================
+// الشبكة التفاعلية
+// ==========================================
+const canvas = document.getElementById('ordyGrid');
+const ctx = canvas.getContext('2d');
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+
+let particles = [];
+let mouse = { x: -1000, y: -1000, radius: 200 };
+window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY + window.scrollY; });
+window.addEventListener('scroll', () => { mouse.x = -1000; mouse.y = -1000; });
+window.addEventListener('mouseout', () => { mouse.x = -1000; mouse.y = -1000; });
+
+class Node {
+    constructor() {
+        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.7; this.vy = (Math.random() - 0.5) * 0.7;
+        this.size = Math.random() * 2 + 1;
+    }
+    draw() {
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = '#00f2fe'; ctx.fill();
+    }
+    update() {
+        if(this.x < 0 || this.x > canvas.width) this.vx *= -1;
+        if(this.y < 0 || this.y > canvas.height) this.vy *= -1;
+        let dx = mouse.x - this.x, dy = mouse.y - this.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < mouse.radius) {
+            let force = (mouse.radius - dist) / mouse.radius;
+            this.x -= (dx/dist)*force*2; this.y -= (dy/dist)*force*2;
+        } else { this.x += this.vx; this.y += this.vy; }
+        this.draw();
+    }
+}
+for(let i=0; i<60; i++) particles.push(new Node());
+
+function drawLines() {
+    for(let i=0; i<particles.length; i++) {
+        for(let j=i+1; j<particles.length; j++) {
+            let dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist < 180) {
+                ctx.beginPath(); ctx.strokeStyle = `rgba(0, 242, 254, ${0.2 - dist/900})`;
+                ctx.lineWidth = 1; ctx.moveTo(particles[i].x, particles[i].y);
+                ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+            }
+        }
+        let dxM = particles[i].x - mouse.x, dyM = particles[i].y - mouse.y;
+        let distM = Math.sqrt(dxM*dxM + dyM*dyM);
+        if(distM < 150) {
+            ctx.beginPath(); ctx.strokeStyle = `rgba(139, 92, 246, ${0.4 - distM/375})`;
+            ctx.lineWidth = 1.5; ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
+        }
+    }
+}
+
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawLines(); for(let p of particles) p.update();
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</body>
+</html>
