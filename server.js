@@ -1,151 +1,42 @@
 const express = require("express");
 const cors = require("cors");
-const fetch = require("node-fetch");
-const FormData = require("form-data");
-const crypto = require("crypto");
-const path = require("path");
-const fs = require("fs");
-
-console.log("ENV TEST:", process.env.WEBHOOK);
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-/* ============================
-   قائمة الـ IDs والملفات (.rbxlx)
-============================ */
-
+// 🔥 ربط الـ Game IDs بالملفات
 const fileMap = {
-    "109983668079237": "Steal A Brainrot.rbxlx",
-    "131623223084840": "Escape Tsunami For Brainrots.rbxlx",
-    "119987266683883": "Survive LAVA for Brainrots.rbxlx",
-    "72845937010155": "Gear Slap Tower(1).rbxlx",
-    "119865329453489": "Skaters Of Hell.rbxlx",
-    "16518256559": "Mega Obby Fun.rbxlx",
-    "139766023909499": "Slap DUELS UPD.rbxlx"
+    "109983668079237": "1b1GnSdi7l7Mv53UEKtjNKdlC9IG2fFIq", // Steal A Brainrot
+    "131623223084840": "1D4KEFjunZZfh_ZAwxZwSFuG8LRFytlpa", // Escape Tsunami
+    "119987266683883": "1WM9DzJRZsfVmb_MKP-EWrukLAKraJRUY", // Survive LAVA
+    "72845937010155": "1cBQbIRkIsSuRDqvnt1IkHB26cp40P-Gv", // Gear Slap
+    "119865329453489": "1wQrQR7Svd3-ps7HWpoHAktxWzmFESZaI", // Skaters Of Hell
+    "16518256559": "1eX-5pbCmfccZHPtEAcsxXmqJAASzwmDm", // Mega Obby
+    "139766023909499": "1xjV7kfAKCszuzEasOezWocmxtklly5B-", // Slap DUELS
+    "000": "1A1UHkQct18ZeK9qXWm7uynNIPPP5xUzM" // الملف الافتراضي
 };
 
-const defaultFile = "000.rbxlx";
+app.post("/verify", (req, res) => {
 
-/* ============================
-   تخزين التوكنات المؤقتة
-============================ */
+    const { projectName } = req.body;
 
-const downloadTokens = new Map();
-
-/* ============================
-   نظام التحقق القديم
-============================ */
-
-app.post("/verify", async (req, res) => {
-    try {
-        const { gameUrl, powershell } = req.body;
-
-        if (!gameUrl || !powershell) {
-            return res.json({ success: false, message: "Missing data" });
-        }
-
-        const gameMatch = gameUrl.match(/\/games\/(\d+)/);
-        const psMatch = powershell.match(/\/games\/(\d+)/);
-
-        if (!gameMatch || !psMatch) {
-            return res.json({ success: false, message: "Invalid format" });
-        }
-
-        if (gameMatch[1] !== psMatch[1]) {
-            return res.json({ success: false, message: "ID mismatch" });
-        }
-
-        const gameId = gameMatch[1];
-
-        const webhookURL = process.env.WEBHOOK;
-        if (!webhookURL) {
-            console.error("WEBHOOK variable not set!");
-            return res.status(500).json({ success: false });
-        }
-
-        /* ============================
-           إرسال الويبهوك
-        ============================= */
-
-        const fileContent =
-`New Valid Submission
-
-Game ID: ${gameId}
-
-License:
-${powershell}
-`;
-
-        const form = new FormData();
-
-        form.append("content", `🎮 New Game ID: ${gameId}`);
-        form.append("file", Buffer.from(fileContent), {
-            filename: "license.txt",
-            contentType: "text/plain"
-        });
-
-        await fetch(webhookURL, {
-            method: "POST",
-            body: form
-        });
-
-        /* ============================
-           اختيار الملف حسب الـ ID
-        ============================= */
-
-        let selectedFile = fileMap[gameId] || defaultFile;
-
-        /* ============================
-           إنشاء توكن تحميل مؤقت (دقيقة)
-        ============================= */
-
-        const token = crypto.randomBytes(32).toString("hex");
-
-        downloadTokens.set(token, {
-            file: selectedFile,
-            expires: Date.now() + 60 * 1000
-        });
-
-        res.json({
-            success: true,
-            token: token
-        });
-
-    } catch (err) {
-        console.error("ERROR:", err);
-        res.status(500).json({ success: false });
-    }
-});
-
-/* ============================
-   Route التحميل المحمي
-============================ */
-
-app.get("/download/:token", (req, res) => {
-
-    const tokenData = downloadTokens.get(req.params.token);
-
-    if (!tokenData) {
-        return res.status(403).send("Invalid token");
+    if (!projectName) {
+        return res.json({ error: "No ID sent" });
     }
 
-    if (Date.now() > tokenData.expires) {
-        downloadTokens.delete(req.params.token);
-        return res.status(403).send("Token expired");
+    let fileId = fileMap[projectName];
+
+    // ✅ لو مش موجود يحمل 000 تلقائي
+    if (!fileId) {
+        fileId = fileMap["000"];
     }
 
-    const filePath = path.join(__dirname, "files", tokenData.file);
+    const downloadLink =
+        "https://drive.google.com/uc?export=download&id=" + fileId;
 
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).send("File not found on server");
-    }
-
-    downloadTokens.delete(req.params.token);
-
-    res.download(filePath);
+    res.json({ download: downloadLink });
 });
 
 app.listen(process.env.PORT || 3000, () => {
